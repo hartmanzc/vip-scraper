@@ -12,12 +12,16 @@ from selenium.webdriver.common.keys import Keys
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import csv
+from flask import Flask, jsonify
 
 
 def setup_browser():
     chrome_options = Options()
-    chrome_options.add_argument("--start-maximized")
+    chrome_options.add_argument("--headless=new")   # ✅ important for Render
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("--start-maximized")
     chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
     chrome_options.add_experimental_option('useAutomationExtension', False)
     service = Service(ChromeDriverManager().install())
@@ -215,9 +219,16 @@ def main():
         print("\n🏁 Extraction complete for ALL programs!")
 
     finally:
-        input("Press ENTER to close browser...")
         driver.quit()
 
 
-if __name__ == "__main__":
-    main()
+# ✅ Flask app for Render
+app = Flask(__name__)
+
+@app.route("/run", methods=["GET"])
+def run_scraper_endpoint():
+    try:
+        main()
+        return jsonify({"status": "success", "message": "Scraper finished"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
